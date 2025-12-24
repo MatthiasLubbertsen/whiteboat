@@ -2,6 +2,8 @@
 
 Welcome to **Whiteboat**. It's like a whiteboard, but... wetter? No, wait. It's a whiteboard application that I named Whiteboat because typos are the mother of invention.
 
+![Whiteboat Demo](/.github/assets/image.png)
+
 ## What is this?
 
 It's a canvas where you can draw things. It uses `perfect-freehand` so your shaky mouse drawings look like artistic masterpieces (or at least legible scribbles). It also has `tesseract.js`, which means it can probably read your handwriting better than your pharmacist can.
