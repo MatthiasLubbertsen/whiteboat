@@ -80,7 +80,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                 <Pencil className="h-4 w-4" />
                 </Button>
             </TooltipTrigger>
-            <TooltipContent>Pen (Auto-Straighten)</TooltipContent>
+            <TooltipContent>Pen</TooltipContent>
         </Tooltip>
 
         <Tooltip>

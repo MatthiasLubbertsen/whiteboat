@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import Tesseract from 'tesseract.js';
+import { recognizeShape } from '../lib/whiteboard-utils';
 
 export type Point = { x: number; y: number; pressure?: number };
 
@@ -353,22 +354,12 @@ export const useWhiteboard = () => {
 
     let newEl = { ...lastElement, isComplete: true };
     
-    // Shape recognition (Straighten Line)
+    // Shape recognition
     if (newEl.tool === 'pen') {
-        const points = newEl.points;
-        if (points.length > 5) {
-            const start = points[0];
-            const end = points[points.length - 1];
-            const dist = Math.hypot(end.x - start.x, end.y - start.y);
-            
-            let pathLen = 0;
-            for(let i=1; i<points.length; i++) {
-                pathLen += Math.hypot(points[i].x - points[i-1].x, points[i].y - points[i-1].y);
-            }
-            
-            if (dist / pathLen > 0.9) {
-                newEl.points = [start, end];
-            }
+        const correctedPoints = recognizeShape(newEl.points);
+        if (correctedPoints) {
+            // Preserve pressure if possible, or just use default
+            newEl.points = correctedPoints.map(p => ({ ...p, pressure: 0.5 }));
         }
     }
 
