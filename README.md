@@ -1,6 +1,6 @@
 # Whiteboat 🛥️
 
-Welcome to **Whiteboat**. It's like a whiteboard, but... wetter? No, wait. It's a whiteboard application that we named Whiteboat because typos are the mother of invention.
+Welcome to **Whiteboat**. It's like a whiteboard, but... wetter? No, wait. It's a whiteboard application that I named Whiteboat because typos are the mother of invention.
 
 ## What is this?
 
@@ -9,23 +9,19 @@ It's a canvas where you can draw things. It uses `perfect-freehand` so your shak
 ## Features
 
 - **Draw Lines**: Obviously.
-- **OCR Magic**: We use Tesseract to try and understand what you wrote. Good luck to the AI.
-- **Konva Power**: We use Konva for the canvas stuff. It's like HTML5 Canvas but with a PhD.
+- **OCR Magic**: I use Tesseract to try and understand what you wrote. Good luck to the AI.
+- **Konva Power**: I use Konva for the canvas stuff. It's like HTML5 Canvas but with a PhD.
 - **Tailwind CSS**: Because writing actual CSS is so 2015.
 
-## I don't like Docker
+## I don't like React
 
-Look, I get it. Docker is great for "production" and "scalability" and "making sure it works on my machine and yours." But honestly? I just want to run `npm run dev` and see the thing work.
+That's unfortunate, because this is a React app. It's like walking into a pizzeria and announcing you hate dough. I use hooks, I use components, and I probably re-render too much. But hey, at least it's not Angular 1.x, right? (Too soon?)
 
-I don't want to write a Dockerfile. I don't want to debug volume mounts. I don't want to wonder why the container can't talk to the host.
-
-So, there is no Dockerfile here. This is a **Free Range Application**. It runs on the bare metal of your OS (well, on top of Node, which is on top of V8, which is on top of C++, which is compiled into assembly, which runs on an operating system, which runs on a kernel, which runs on firmware, which runs on silicon, which is made of atoms, which are mostly empty space… you get the point).
-
-If you want to containerize this, you're on your own, captain. 🫡
+If you really hate React, you can try rewriting this in Vanilla JS. See you in 10 years when you finish implementing your own state management system.
 
 ## How to run this bad boy
 
-Since we established we aren't using Docker, here is the highly complex, multi-step process to get this running:
+Since we established I'm not using Docker, here is the highly complex, multi-step process to get this running:
 
 1.  **Install dependencies** (The part where we download half the internet):
     ```bash
@@ -43,14 +39,24 @@ Since we established we aren't using Docker, here is the highly complex, multi-s
 ## Tech Stack
 
 - **Vite**: Because waiting for Webpack is painful.
-- **React**: Because we like components.
-- **TypeScript**: Because we like red squiggly lines.
-- **Shadcn UI**: Because we want it to look good without trying too hard.
+- **React**: Because I like components.
+- **TypeScript**: Because I like red squiggly lines.
+- **Shadcn UI**: Because I want it to look good without trying too hard.
 
 ## Contributing
 
 If you want to add features, fix bugs, or just rename everything to "WhiteyMcWhiteboardFace", feel free to open a PR. Just don't sink the boat.
 
+## License
+
+This project is **source-available**. That means you can look at the code, you can learn from the code, and you can definitely fix the bugs in the code (please?).
+
+But you **cannot** steal the code, repackage it, and sell it as "WhiteyMcWhiteboardFace Enterprise Edition".
+
+In short: Look, but don't touch (unless you're submitting a PR).
+
+For the legal mumbo-jumbo, see the [LICENSE.md](LICENSE.md) file.
+
 ---
 
-*Made with ❤️ and ☕ (and no Docker containers).*
+*Made with ❤️ by a developer who is 13 years old.*
