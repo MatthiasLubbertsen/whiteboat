@@ -124,8 +124,13 @@ const isOverText = (text: TextElement, x: number, y: number, radius: number) => 
 
 export const useWhiteboard = () => {
   const [elements, setElements] = useState<WhiteboardElement[]>([]);
-  const [history, setHistory] = useState<WhiteboardElement[][]>([]);
-  const [historyIndex, setHistoryIndex] = useState(-1);
+  const [historyState, setHistoryState] = useState<{
+    history: WhiteboardElement[][];
+    index: number;
+  }>({
+    history: [[]],
+    index: 0
+  });
   
   const [tool, setToolState] = useState<string>('pen');
   const [color, setColor] = useState<string>('#000000');
@@ -134,7 +139,8 @@ export const useWhiteboard = () => {
       pen: 5,
       eraser: 20,
       magic: 5,
-      text: 24
+      text: 24,
+      arrow: 5
   });
   
   const [selection, setSelection] = useState<string[]>([]);
@@ -153,15 +159,30 @@ export const useWhiteboard = () => {
     if (saved) {
       try {
         const loaded = JSON.parse(saved);
-        setElements(loaded);
-        setHistory([loaded]);
-        setHistoryIndex(0);
+        if (Array.isArray(loaded)) {
+            setElements(loaded);
+            setHistoryState({
+                history: [loaded],
+                index: 0
+            });
+        } else {
+            setHistoryState({
+                history: [[]],
+                index: 0
+            });
+        }
       } catch (e) {
         console.error("Failed to load drawings", e);
+        setHistoryState({
+            history: [[]],
+            index: 0
+        });
       }
     } else {
-        setHistory([[]]);
-        setHistoryIndex(0);
+        setHistoryState({
+            history: [[]],
+            index: 0
+        });
     }
   }, []);
 
@@ -205,32 +226,36 @@ export const useWhiteboard = () => {
   }, [tool]);
 
   const addToHistory = useCallback((newElements: WhiteboardElement[]) => {
-      setHistory(prev => {
-          const newHistory = prev.slice(0, historyIndex + 1);
+      setHistoryState(prev => {
+          const newHistory = prev.history.slice(0, prev.index + 1);
           newHistory.push(newElements);
-          return newHistory;
+          return {
+              history: newHistory,
+              index: prev.index + 1
+          };
       });
-      setHistoryIndex(prev => prev + 1);
       setElements(newElements);
-  }, [historyIndex]);
+  }, []);
 
   const undo = useCallback(() => {
       if (ocrTimeoutRef.current) clearTimeout(ocrTimeoutRef.current);
       setIsRecognizing(false);
-      if (historyIndex > 0) {
-          setHistoryIndex(prev => prev - 1);
-          setElements(history[historyIndex - 1]);
+      if (historyState.index > 0) {
+          const newIndex = historyState.index - 1;
+          setHistoryState(prev => ({ ...prev, index: newIndex }));
+          setElements(historyState.history[newIndex]);
       }
-  }, [history, historyIndex]);
+  }, [historyState]);
 
   const redo = useCallback(() => {
       if (ocrTimeoutRef.current) clearTimeout(ocrTimeoutRef.current);
       setIsRecognizing(false);
-      if (historyIndex < history.length - 1) {
-          setHistoryIndex(prev => prev + 1);
-          setElements(history[historyIndex + 1]);
+      if (historyState.index < historyState.history.length - 1) {
+          const newIndex = historyState.index + 1;
+          setHistoryState(prev => ({ ...prev, index: newIndex }));
+          setElements(historyState.history[newIndex]);
       }
-  }, [history, historyIndex]);
+  }, [historyState]);
 
   const startDrawing = useCallback((x: number, y: number, pressure?: number) => {
     if (tool === 'select' || tool === 'hand') return;
@@ -332,7 +357,13 @@ export const useWhiteboard = () => {
       const lastElement = prev[prev.length - 1];
       if (!lastElement || lastElement.type !== 'stroke' || lastElement.isComplete) return prev;
 
-      const newPoints = [...lastElement.points, { x, y, pressure }];
+      let newPoints;
+      if (tool === 'arrow') {
+          newPoints = [lastElement.points[0], { x, y, pressure }];
+      } else {
+          newPoints = [...lastElement.points, { x, y, pressure }];
+      }
+
       const newElement = { ...lastElement, points: newPoints };
       
       return [...prev.slice(0, -1), newElement];
@@ -489,7 +520,7 @@ export const useWhiteboard = () => {
     updateElement,
     undo,
     redo,
-    canUndo: historyIndex > 0,
-    canRedo: historyIndex < history.length - 1
+    canUndo: historyState.index > 0,
+    canRedo: historyState.index < historyState.history.length - 1
   };
 };

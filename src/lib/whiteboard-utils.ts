@@ -1,3 +1,32 @@
+import { getArrow } from 'perfect-arrows';
+
+export function getArrowSvgPath(start: {x: number, y: number}, end: {x: number, y: number}) {
+    const arrow = getArrow(start.x, start.y, end.x, end.y, {
+        padEnd: 0,
+    });
+    const [sx, sy, cx, cy, ex, ey, ae] = arrow;
+
+    const headSize = 15;
+    const angle1 = ae + Math.PI * 0.85;
+    const angle2 = ae - Math.PI * 0.85;
+    
+    const x1 = ex + Math.cos(angle1) * headSize;
+    const y1 = ey + Math.sin(angle1) * headSize;
+    const x2 = ex + Math.cos(angle2) * headSize;
+    const y2 = ey + Math.sin(angle2) * headSize;
+
+    // Draw the curve and the arrow head
+    // Note: We might want to fill the arrow head, but for a single path stroke, it might look weird if we don't close it properly.
+    // If we just stroke the path, the head will be an open V shape if we don't close it.
+    // Let's make the head a filled triangle if we can, but with a single path we can only stroke or fill the whole thing.
+    // If we stroke, we can draw the V shape.
+    
+    // M sx sy Q cx cy ex ey (Curve)
+    // M x1 y1 L ex ey L x2 y2 (Head as V shape)
+    
+    return `M${sx},${sy} Q${cx},${cy} ${ex},${ey} M${x1},${y1} L${ex},${ey} L${x2},${y2}`;
+}
+
 export function getSvgPathFromStroke(stroke: number[][]) {
   if (!stroke.length) return "";
 

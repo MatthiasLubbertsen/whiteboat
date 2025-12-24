@@ -18,7 +18,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Pencil, Eraser, Hand, Trash2, MousePointer2, Wand2, Type, Undo2, Redo2, Loader2 } from 'lucide-react';
+import { Pencil, Eraser, Hand, Trash2, MousePointer2, Wand2, Type, Undo2, Redo2, Loader2, ArrowRight } from 'lucide-react';
 
 interface ToolbarProps {
   tool: string;
@@ -81,6 +81,19 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                 </Button>
             </TooltipTrigger>
             <TooltipContent>Pen</TooltipContent>
+        </Tooltip>
+
+        <Tooltip>
+            <TooltipTrigger asChild>
+                <Button
+                variant={tool === 'arrow' ? 'secondary' : 'ghost'}
+                size="icon"
+                onClick={() => setTool('arrow')}
+                >
+                <ArrowRight className="h-4 w-4" />
+                </Button>
+            </TooltipTrigger>
+            <TooltipContent>Arrow</TooltipContent>
         </Tooltip>
 
         <Tooltip>

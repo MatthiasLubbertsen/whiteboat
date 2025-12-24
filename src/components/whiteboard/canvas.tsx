@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Konva from 'konva';
-import { Stage, Layer, Path, Text, Transformer, Rect, Group } from 'react-konva';
+import { Stage, Layer, Path, Text, Transformer, Rect, Group, Circle } from 'react-konva';
 import { getStroke } from 'perfect-freehand';
-import { getSvgPathFromStroke, options, getBoundingBox } from '@/lib/whiteboard-utils';
+import { getSvgPathFromStroke, options, getBoundingBox, getArrowSvgPath } from '@/lib/whiteboard-utils';
 import type { WhiteboardElement, StrokeElement, TextElement } from '@/hooks/use-whiteboard';
 import { useCssVariable } from '@/hooks/use-css-variable';
 
@@ -20,7 +20,7 @@ interface CanvasProps {
 }
 
 export const Canvas: React.FC<CanvasProps> = ({
-  elements,
+  elements = [],
   tool,
   selection,
   setSelection,
@@ -275,9 +275,141 @@ export const Canvas: React.FC<CanvasProps> = ({
         style={{ cursor: tool === 'hand' ? 'grab' : tool === 'select' ? 'default' : 'crosshair' }}
       >
         <Layer>
-          {elements.map((el) => {
+          {elements?.map((el) => {
             if (el.type === 'stroke') {
                 const strokeEl = el as StrokeElement;
+                
+                if (strokeEl.tool === 'arrow') {
+                    if (strokeEl.points.length < 2) return null;
+                    const start = strokeEl.points[0];
+                    const end = strokeEl.points[strokeEl.points.length - 1];
+                    const pathData = getArrowSvgPath(start, end);
+                    const isSelected = selection.includes(el.id);
+                    const box = getBoundingBox([start, end], strokeEl.size + 20);
+
+                    return (
+                        <Group
+                            key={el.id}
+                            id={el.id}
+                            x={el.x}
+                            y={el.y}
+                            rotation={el.rotation}
+                            draggable={tool === 'select'}
+                            onClick={(e) => {
+                                e.cancelBubble = true;
+                                handleSelect(el.id);
+                            }}
+                            onTap={(e) => {
+                                e.cancelBubble = true;
+                                handleSelect(el.id);
+                            }}
+                            onDragEnd={handleTransformEnd}
+                        >
+                            <Rect
+                                x={box.x}
+                                y={box.y}
+                                width={box.width}
+                                height={box.height}
+                                fill="transparent"
+                                listening={isSelected}
+                            />
+                            <Path
+                                data={pathData}
+                                stroke={strokeEl.color}
+                                strokeWidth={strokeEl.size}
+                                lineCap="round"
+                                lineJoin="round"
+                            />
+                            {isSelected && (
+                                <>
+                                    <Circle
+                                        name="start"
+                                        x={start.x}
+                                        y={start.y}
+                                        radius={8}
+                                        fill="white"
+                                        stroke={accentColor}
+                                        strokeWidth={2}
+                                        draggable
+                                        onDragMove={(e) => {
+                                            const group = e.target.getParent();
+                                            if (!group) return;
+                                            const path = group.findOne('Path') as Konva.Path;
+                                            const startCircle = group.findOne('.start');
+                                            const endCircle = group.findOne('.end');
+                                            if (!path || !startCircle || !endCircle) return;
+                                            
+                                            const s = { x: startCircle.x(), y: startCircle.y() };
+                                            const e_pos = { x: endCircle.x(), y: endCircle.y() };
+                                            path.data(getArrowSvgPath(s, e_pos));
+                                        }}
+                                        onDragEnd={(e) => {
+                                            const group = e.target.getParent();
+                                            if (!group) return;
+                                            const startCircle = group.findOne('.start');
+                                            const endCircle = group.findOne('.end');
+                                            if (!startCircle || !endCircle) return;
+
+                                            const s = { x: startCircle.x(), y: startCircle.y() };
+                                            const e_pos = { x: endCircle.x(), y: endCircle.y() };
+                                            
+                                            updateElement(el.id, {
+                                                points: [
+                                                    { ...start, x: s.x, y: s.y },
+                                                    { ...end, x: e_pos.x, y: e_pos.y }
+                                                ]
+                                            });
+                                        }}
+                                        onMouseDown={(e) => e.cancelBubble = true}
+                                        onTouchStart={(e) => e.cancelBubble = true}
+                                    />
+                                    <Circle
+                                        name="end"
+                                        x={end.x}
+                                        y={end.y}
+                                        radius={8}
+                                        fill="white"
+                                        stroke={accentColor}
+                                        strokeWidth={2}
+                                        draggable
+                                        onDragMove={(e) => {
+                                            const group = e.target.getParent();
+                                            if (!group) return;
+                                            const path = group.findOne('Path') as Konva.Path;
+                                            const startCircle = group.findOne('.start');
+                                            const endCircle = group.findOne('.end');
+                                            if (!path || !startCircle || !endCircle) return;
+                                            
+                                            const s = { x: startCircle.x(), y: startCircle.y() };
+                                            const e_pos = { x: endCircle.x(), y: endCircle.y() };
+                                            path.data(getArrowSvgPath(s, e_pos));
+                                        }}
+                                        onDragEnd={(e) => {
+                                            const group = e.target.getParent();
+                                            if (!group) return;
+                                            const startCircle = group.findOne('.start');
+                                            const endCircle = group.findOne('.end');
+                                            if (!startCircle || !endCircle) return;
+
+                                            const s = { x: startCircle.x(), y: startCircle.y() };
+                                            const e_pos = { x: endCircle.x(), y: endCircle.y() };
+                                            
+                                            updateElement(el.id, {
+                                                points: [
+                                                    { ...start, x: s.x, y: s.y },
+                                                    { ...end, x: e_pos.x, y: e_pos.y }
+                                                ]
+                                            });
+                                        }}
+                                        onMouseDown={(e) => e.cancelBubble = true}
+                                        onTouchStart={(e) => e.cancelBubble = true}
+                                    />
+                                </>
+                            )}
+                        </Group>
+                    );
+                }
+
                 const stroke = getStroke(strokeEl.points, {
                 ...options,
                 size: strokeEl.size,
@@ -286,6 +418,7 @@ export const Canvas: React.FC<CanvasProps> = ({
                 const pathData = getSvgPathFromStroke(stroke);
                 const isSelected = selection.includes(el.id);
                 const box = getBoundingBox(strokeEl.points, strokeEl.size / 2);
+                const isStraightLine = strokeEl.tool === 'pen' && strokeEl.points.length === 2;
 
                 return (
                 <Group
@@ -320,6 +453,104 @@ export const Canvas: React.FC<CanvasProps> = ({
                             strokeEl.tool === 'eraser' ? 'destination-out' : 'source-over'
                         }
                     />
+                    {isSelected && isStraightLine && (
+                        <>
+                            <Circle
+                                name="start"
+                                x={strokeEl.points[0].x}
+                                y={strokeEl.points[0].y}
+                                radius={8}
+                                fill="white"
+                                stroke={accentColor}
+                                strokeWidth={2}
+                                draggable
+                                onDragMove={(e) => {
+                                    const group = e.target.getParent();
+                                    if (!group) return;
+                                    const path = group.findOne('Path') as Konva.Path;
+                                    const startCircle = group.findOne('.start');
+                                    const endCircle = group.findOne('.end');
+                                    if (!path || !startCircle || !endCircle) return;
+                                    
+                                    const s = { x: startCircle.x(), y: startCircle.y() };
+                                    const e_pos = { x: endCircle.x(), y: endCircle.y() };
+                                    
+                                    const newStroke = getStroke([s, e_pos], {
+                                        ...options,
+                                        size: strokeEl.size,
+                                        thinning: 0.5,
+                                    });
+                                    path.data(getSvgPathFromStroke(newStroke));
+                                }}
+                                onDragEnd={(e) => {
+                                    const group = e.target.getParent();
+                                    if (!group) return;
+                                    const startCircle = group.findOne('.start');
+                                    const endCircle = group.findOne('.end');
+                                    if (!startCircle || !endCircle) return;
+
+                                    const s = { x: startCircle.x(), y: startCircle.y() };
+                                    const e_pos = { x: endCircle.x(), y: endCircle.y() };
+                                    
+                                    updateElement(el.id, {
+                                        points: [
+                                            { ...strokeEl.points[0], x: s.x, y: s.y },
+                                            { ...strokeEl.points[1], x: e_pos.x, y: e_pos.y }
+                                        ]
+                                    });
+                                }}
+                                onMouseDown={(e) => e.cancelBubble = true}
+                                onTouchStart={(e) => e.cancelBubble = true}
+                            />
+                            <Circle
+                                name="end"
+                                x={strokeEl.points[1].x}
+                                y={strokeEl.points[1].y}
+                                radius={8}
+                                fill="white"
+                                stroke={accentColor}
+                                strokeWidth={2}
+                                draggable
+                                onDragMove={(e) => {
+                                    const group = e.target.getParent();
+                                    if (!group) return;
+                                    const path = group.findOne('Path') as Konva.Path;
+                                    const startCircle = group.findOne('.start');
+                                    const endCircle = group.findOne('.end');
+                                    if (!path || !startCircle || !endCircle) return;
+                                    
+                                    const s = { x: startCircle.x(), y: startCircle.y() };
+                                    const e_pos = { x: endCircle.x(), y: endCircle.y() };
+                                    
+                                    const newStroke = getStroke([s, e_pos], {
+                                        ...options,
+                                        size: strokeEl.size,
+                                        thinning: 0.5,
+                                    });
+                                    path.data(getSvgPathFromStroke(newStroke));
+                                }}
+                                onDragEnd={(e) => {
+                                    const group = e.target.getParent();
+                                    if (!group) return;
+                                    const startCircle = group.findOne('.start');
+                                    const endCircle = group.findOne('.end');
+                                    if (!startCircle || !endCircle) return;
+
+                                    const s = { x: startCircle.x(), y: startCircle.y() };
+                                    const e_pos = { x: endCircle.x(), y: endCircle.y() };
+                                    
+                                    updateElement(el.id, {
+                                        points: [
+                                            { ...strokeEl.points[0], x: s.x, y: s.y },
+                                            { ...strokeEl.points[1], x: e_pos.x, y: e_pos.y }
+                                        ]
+                                    });
+                                }}
+                                onMouseDown={(e) => e.cancelBubble = true}
+                                onTouchStart={(e) => e.cancelBubble = true}
+                            />
+                        </>
+                    )}
                 </Group>
                 );
             } else if (el.type === 'text') {
