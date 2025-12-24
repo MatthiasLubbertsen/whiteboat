@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { Canvas } from '@/components/whiteboard/canvas';
 import { Toolbar } from '@/components/whiteboard/toolbar';
 import { Header } from '@/components/whiteboard/header';
@@ -28,6 +28,61 @@ export const Whiteboard = () => {
     canUndo,
     canRedo
   } = useWhiteboard();
+
+  const [theme, setTheme] = useState<'light' | 'dark' | 'system'>('system');
+
+  useEffect(() => {
+    const root = window.document.documentElement;
+    
+    const applyTheme = (t: 'light' | 'dark' | 'system') => {
+        root.classList.remove('light', 'dark');
+        
+        if (t === 'system') {
+            const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            root.classList.add(systemTheme);
+            return;
+        }
+        
+        root.classList.add(t);
+    };
+
+    applyTheme(theme);
+  }, [theme]);
+
+  // Listen for system changes if theme is system
+  useEffect(() => {
+      if (theme !== 'system') return;
+      
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      const handleChange = () => {
+          const root = window.document.documentElement;
+          root.classList.remove('light', 'dark');
+          root.classList.add(mediaQuery.matches ? 'dark' : 'light');
+      };
+      
+      mediaQuery.addEventListener('change', handleChange);
+      return () => mediaQuery.removeEventListener('change', handleChange);
+  }, [theme]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+        e.preventDefault();
+        if (e.shiftKey) {
+          redo();
+        } else {
+          undo();
+        }
+      } else if ((e.ctrlKey || e.metaKey) && e.key === 'y') {
+        e.preventDefault();
+        redo();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [undo, redo]);
 
   const stageRef = useRef<any>(null);
 
@@ -142,7 +197,7 @@ export const Whiteboard = () => {
 
   return (
     <div className="relative w-full h-screen overflow-hidden bg-zinc-50 dark:bg-zinc-950">
-      <Header onDownload={handleDownload} />
+      <Header onDownload={handleDownload} theme={theme} setTheme={setTheme} />
       <Canvas
         elements={elements}
         tool={tool}

@@ -13,44 +13,11 @@ import { Download, Moon, Sun, Monitor } from 'lucide-react';
 
 interface HeaderProps {
   onDownload: (format: 'png' | 'svg', background: 'transparent' | 'white' | 'black') => void;
+  theme: 'light' | 'dark' | 'system';
+  setTheme: (theme: 'light' | 'dark' | 'system') => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onDownload }) => {
-  const [theme, setTheme] = React.useState<'light' | 'dark' | 'system'>('system');
-
-  React.useEffect(() => {
-    const root = window.document.documentElement;
-    
-    const applyTheme = (t: 'light' | 'dark' | 'system') => {
-        root.classList.remove('light', 'dark');
-        
-        if (t === 'system') {
-            const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-            root.classList.add(systemTheme);
-            return;
-        }
-        
-        root.classList.add(t);
-    };
-
-    applyTheme(theme);
-  }, [theme]);
-
-  // Listen for system changes if theme is system
-  React.useEffect(() => {
-      if (theme !== 'system') return;
-      
-      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-      const handleChange = () => {
-          const root = window.document.documentElement;
-          root.classList.remove('light', 'dark');
-          root.classList.add(mediaQuery.matches ? 'dark' : 'light');
-      };
-      
-      mediaQuery.addEventListener('change', handleChange);
-      return () => mediaQuery.removeEventListener('change', handleChange);
-  }, [theme]);
-
+export const Header: React.FC<HeaderProps> = ({ onDownload, theme, setTheme }) => {
   const cycleTheme = () => {
       if (theme === 'light') setTheme('dark');
       else if (theme === 'dark') setTheme('system');
