@@ -32,23 +32,28 @@ export type WhiteboardElement = StrokeElement | TextElement;
 
 const STORAGE_KEY = 'whiteboat-drawings';
 
-const pointsToPath = (points: Point[]) => {
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return null;
+const strokesToPath = (strokes: StrokeElement[]) => {
+    if (strokes.length === 0) return null;
 
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-    points.forEach(p => {
-        minX = Math.min(minX, p.x);
-        minY = Math.min(minY, p.y);
-        maxX = Math.max(maxX, p.x);
-        maxY = Math.max(maxY, p.y);
+    
+    strokes.forEach(stroke => {
+        stroke.points.forEach(p => {
+            minX = Math.min(minX, p.x);
+            minY = Math.min(minY, p.y);
+            maxX = Math.max(maxX, p.x);
+            maxY = Math.max(maxY, p.y);
+        });
     });
 
     const width = maxX - minX + 40;
     const height = maxY - minY + 40;
+    
+    const canvas = document.createElement('canvas');
     canvas.width = width;
     canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
 
     ctx.fillStyle = 'white';
     ctx.fillRect(0, 0, width, height);
@@ -57,12 +62,14 @@ const pointsToPath = (points: Point[]) => {
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
 
-    ctx.beginPath();
-    if (points.length > 0) {
-        ctx.moveTo(points[0].x - minX + 20, points[0].y - minY + 20);
-        points.forEach(p => ctx.lineTo(p.x - minX + 20, p.y - minY + 20));
-    }
-    ctx.stroke();
+    strokes.forEach(stroke => {
+        ctx.beginPath();
+        if (stroke.points.length > 0) {
+            ctx.moveTo(stroke.points[0].x - minX + 20, stroke.points[0].y - minY + 20);
+            stroke.points.forEach(p => ctx.lineTo(p.x - minX + 20, p.y - minY + 20));
+        }
+        ctx.stroke();
+    });
 
     return { dataUrl: canvas.toDataURL(), x: minX, y: minY };
 };
@@ -130,7 +137,14 @@ export const useWhiteboard = () => {
   });
   
   const [selection, setSelection] = useState<string[]>([]);
+  const [isRecognizing, setIsRecognizing] = useState(false);
   const isDrawing = useRef(false);
+  const ocrTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const elementsRef = useRef(elements);
+
+  useEffect(() => {
+      elementsRef.current = elements;
+  }, [elements]);
 
   // Load from local storage
   useEffect(() => {
@@ -200,6 +214,8 @@ export const useWhiteboard = () => {
   }, [historyIndex]);
 
   const undo = useCallback(() => {
+      if (ocrTimeoutRef.current) clearTimeout(ocrTimeoutRef.current);
+      setIsRecognizing(false);
       if (historyIndex > 0) {
           setHistoryIndex(prev => prev - 1);
           setElements(history[historyIndex - 1]);
@@ -207,6 +223,8 @@ export const useWhiteboard = () => {
   }, [history, historyIndex]);
 
   const redo = useCallback(() => {
+      if (ocrTimeoutRef.current) clearTimeout(ocrTimeoutRef.current);
+      setIsRecognizing(false);
       if (historyIndex < history.length - 1) {
           setHistoryIndex(prev => prev + 1);
           setElements(history[historyIndex + 1]);
@@ -358,31 +376,91 @@ export const useWhiteboard = () => {
     addToHistory(newElements);
     
     if (newEl.tool === 'magic') {
-        const result = pointsToPath(newEl.points);
-        if (result) {
-            try {
-                const { data: { text } } = await Tesseract.recognize(result.dataUrl, 'eng');
-                const cleanText = text.trim();
-                if (cleanText) {
-                    const newTextElement: TextElement = {
-                        id: newEl.id,
-                        type: 'text',
-                        x: result.x,
-                        y: result.y,
-                        rotation: 0,
-                        color: newEl.color,
-                        text: cleanText,
-                        fontSize: 24,
-                    };
-                    const updatedElements = newElements.map(el => el.id === newEl.id ? newTextElement : el);
-                    addToHistory(updatedElements);
-                }
-            } catch (e) {
-                console.error("OCR Failed", e);
-            }
+        if (ocrTimeoutRef.current) {
+            clearTimeout(ocrTimeoutRef.current);
         }
+        
+        setIsRecognizing(true);
+        
+        ocrTimeoutRef.current = setTimeout(async () => {
+            const currentElements = elementsRef.current;
+            
+            // Find consecutive magic strokes at the end
+            const magicStrokes: StrokeElement[] = [];
+            let i = currentElements.length - 1;
+            while (i >= 0) {
+                const el = currentElements[i];
+                if (el.type === 'stroke' && el.tool === 'magic') {
+                    magicStrokes.unshift(el);
+                } else {
+                    break;
+                }
+                i--;
+            }
+            
+            if (magicStrokes.length === 0) {
+                setIsRecognizing(false);
+                return;
+            }
+
+            const result = strokesToPath(magicStrokes);
+            if (result) {
+                try {
+                    const { data: { text } } = await Tesseract.recognize(result.dataUrl, 'eng');
+                    const cleanText = text.trim();
+
+                    if (cleanText) {
+                        const baseElements = currentElements.slice(0, currentElements.length - magicStrokes.length);
+                        
+                        // Find nearest text element
+                        let nearestId: string | null = null;
+                        let minDistance = Infinity;
+                        const threshold = 200; // pixels
+
+                        baseElements.forEach(el => {
+                            if (el.type === 'text') {
+                                const dist = Math.hypot(el.x - result.x, el.y - result.y);
+                                if (dist < minDistance) {
+                                    minDistance = dist;
+                                    nearestId = el.id;
+                                }
+                            }
+                        });
+
+                        if (nearestId && minDistance < threshold) {
+                            const updatedElements = baseElements.map(el => 
+                                el.id === nearestId 
+                                    ? { ...el, text: (el as TextElement).text + ' ' + cleanText } 
+                                    : el
+                            );
+                            addToHistory(updatedElements);
+                        } else {
+                            const newTextElement: TextElement = {
+                                id: magicStrokes[0].id,
+                                type: 'text',
+                                x: result.x,
+                                y: result.y,
+                                rotation: 0,
+                                color: magicStrokes[0].color,
+                                text: cleanText,
+                                fontSize: 24,
+                            };
+                            
+                            const updatedElements = [...baseElements, newTextElement];
+                            addToHistory(updatedElements);
+                        }
+                    }
+                } catch (e) {
+                    console.error("OCR Failed", e);
+                } finally {
+                    setIsRecognizing(false);
+                }
+            } else {
+                setIsRecognizing(false);
+            }
+        }, 1000);
     }
-  }, [elements, addToHistory]);
+  }, [elements, addToHistory, tool]);
 
   const clearCanvas = useCallback(() => {
     addToHistory([]);
@@ -414,6 +492,7 @@ export const useWhiteboard = () => {
     startDrawing,
     continueDrawing,
     stopDrawing,
+    isRecognizing,
     clearCanvas,
     deleteSelection,
     updateElement,

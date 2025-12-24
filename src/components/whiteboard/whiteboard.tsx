@@ -26,7 +26,8 @@ export const Whiteboard = () => {
     undo,
     redo,
     canUndo,
-    canRedo
+    canRedo,
+    isRecognizing
   } = useWhiteboard();
 
   const [theme, setTheme] = useState<'light' | 'dark' | 'system'>('system');
@@ -224,6 +225,7 @@ export const Whiteboard = () => {
         redo={redo}
         canUndo={canUndo}
         canRedo={canRedo}
+        isRecognizing={isRecognizing}
       />
     </div>
   );

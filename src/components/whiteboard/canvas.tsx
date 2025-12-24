@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Konva from 'konva';
-import { Stage, Layer, Path, Text, Transformer, Rect } from 'react-konva';
+import { Stage, Layer, Path, Text, Transformer, Rect, Group } from 'react-konva';
 import { getStroke } from 'perfect-freehand';
-import { getSvgPathFromStroke, options } from '@/lib/whiteboard-utils';
+import { getSvgPathFromStroke, options, getBoundingBox } from '@/lib/whiteboard-utils';
 import type { WhiteboardElement, StrokeElement, TextElement } from '@/hooks/use-whiteboard';
+import { useCssVariable } from '@/hooks/use-css-variable';
 
 interface CanvasProps {
   elements: WhiteboardElement[];
@@ -35,6 +36,7 @@ export const Canvas: React.FC<CanvasProps> = ({
   const [dimensions, setDimensions] = useState({ width: window.innerWidth, height: window.innerHeight });
   const [selectionBox, setSelectionBox] = useState<{ start: {x:number, y:number}, end: {x:number, y:number} } | null>(null);
   const transformerRef = useRef<any>(null);
+  const accentColor = useCssVariable('--accent') || '#3b82f6';
 
   useEffect(() => {
     const handleResize = () => {
@@ -282,24 +284,43 @@ export const Canvas: React.FC<CanvasProps> = ({
                 thinning: strokeEl.tool === 'pen' ? 0.5 : 0,
                 });
                 const pathData = getSvgPathFromStroke(stroke);
+                const isSelected = selection.includes(el.id);
+                const box = getBoundingBox(strokeEl.points, strokeEl.size / 2);
 
                 return (
-                <Path
+                <Group
                     key={el.id}
                     id={el.id}
                     x={el.x}
                     y={el.y}
                     rotation={el.rotation}
-                    data={pathData}
-                    fill={strokeEl.tool === 'eraser' ? '#ffffff' : strokeEl.color}
-                    globalCompositeOperation={
-                    strokeEl.tool === 'eraser' ? 'destination-out' : 'source-over'
-                    }
-                    onClick={() => handleSelect(el.id)}
-                    onTap={() => handleSelect(el.id)}
                     draggable={tool === 'select'}
+                    onClick={(e) => {
+                        e.cancelBubble = true;
+                        handleSelect(el.id);
+                    }}
+                    onTap={(e) => {
+                        e.cancelBubble = true;
+                        handleSelect(el.id);
+                    }}
                     onDragEnd={handleTransformEnd}
-                />
+                >
+                    <Rect
+                        x={box.x}
+                        y={box.y}
+                        width={box.width}
+                        height={box.height}
+                        fill="transparent"
+                        listening={isSelected}
+                    />
+                    <Path
+                        data={pathData}
+                        fill={strokeEl.tool === 'eraser' ? '#ffffff' : strokeEl.color}
+                        globalCompositeOperation={
+                            strokeEl.tool === 'eraser' ? 'destination-out' : 'source-over'
+                        }
+                    />
+                </Group>
                 );
             } else if (el.type === 'text') {
                 const textEl = el as TextElement;
@@ -329,12 +350,17 @@ export const Canvas: React.FC<CanvasProps> = ({
                 y={Math.min(selectionBox.start.y, selectionBox.end.y)}
                 width={Math.abs(selectionBox.end.x - selectionBox.start.x)}
                 height={Math.abs(selectionBox.end.y - selectionBox.start.y)}
-                fill="rgba(59, 130, 246, 0.2)" // Blue-500 with opacity
-                stroke="#3b82f6"
+                fill={`color-mix(in srgb, ${accentColor}, transparent 80%)`}
+                stroke={accentColor}
                 strokeWidth={1}
               />
           )}
-          <Transformer ref={transformerRef} />
+          <Transformer
+            ref={transformerRef}
+            borderStroke={accentColor}
+            anchorStroke={accentColor}
+            anchorFill="white"
+          />
         </Layer>
       </Stage>
     </div>

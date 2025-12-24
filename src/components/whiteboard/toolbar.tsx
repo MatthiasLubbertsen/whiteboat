@@ -18,7 +18,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Pencil, Eraser, Hand, Trash2, MousePointer2, Wand2, Type, Undo2, Redo2 } from 'lucide-react';
+import { Pencil, Eraser, Hand, Trash2, MousePointer2, Wand2, Type, Undo2, Redo2, Loader2 } from 'lucide-react';
 
 interface ToolbarProps {
   tool: string;
@@ -34,6 +34,7 @@ interface ToolbarProps {
   redo: () => void;
   canUndo: boolean;
   canRedo: boolean;
+  isRecognizing?: boolean;
 }
 
 export const Toolbar: React.FC<ToolbarProps> = ({
@@ -50,6 +51,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   redo,
   canUndo,
   canRedo,
+  isRecognizing,
 }) => {
   return (
     <TooltipProvider>
@@ -87,8 +89,9 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                 variant={tool === 'magic' ? 'secondary' : 'ghost'}
                 size="icon"
                 onClick={() => setTool('magic')}
+                disabled={isRecognizing}
                 >
-                <Wand2 className="h-4 w-4" />
+                {isRecognizing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
                 </Button>
             </TooltipTrigger>
             <TooltipContent>Magic Pencil (OCR)</TooltipContent>
