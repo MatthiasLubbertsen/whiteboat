@@ -67,6 +67,53 @@ const pointsToPath = (points: Point[]) => {
     return { dataUrl: canvas.toDataURL(), x: minX, y: minY };
 };
 
+const eraseFromStroke = (stroke: StrokeElement, x: number, y: number, radius: number): StrokeElement[] => {
+    const points = stroke.points;
+    let hasErasure = false;
+    const segments: Point[][] = [];
+    let currentSegment: Point[] = [];
+
+    for (const p of points) {
+        const dist = Math.hypot(p.x - x, p.y - y);
+        if (dist > radius) {
+            currentSegment.push(p);
+        } else {
+            hasErasure = true;
+            if (currentSegment.length > 0) {
+                segments.push(currentSegment);
+                currentSegment = [];
+            }
+        }
+    }
+    if (currentSegment.length > 0) {
+        segments.push(currentSegment);
+    }
+
+    if (!hasErasure) {
+        return [stroke];
+    }
+    
+    if (segments.length === 0) return [];
+    
+    return segments.map(seg => ({
+        ...stroke,
+        id: crypto.randomUUID(),
+        points: seg
+    }));
+};
+
+const isOverText = (text: TextElement, x: number, y: number, radius: number) => {
+    const ctx = document.createElement('canvas').getContext('2d');
+    if (!ctx) return false;
+    ctx.font = `${text.fontSize}px sans-serif`;
+    const metrics = ctx.measureText(text.text);
+    const width = metrics.width;
+    const height = text.fontSize; 
+    
+    return x >= text.x - radius && x <= text.x + width + radius &&
+           y >= text.y - radius && y <= text.y + height + radius;
+};
+
 export const useWhiteboard = () => {
   const [elements, setElements] = useState<WhiteboardElement[]>([]);
   const [history, setHistory] = useState<WhiteboardElement[][]>([]);
@@ -189,6 +236,33 @@ export const useWhiteboard = () => {
     }
 
     isDrawing.current = true;
+
+    if (tool === 'eraser') {
+        setElements(prev => {
+            const newElements: WhiteboardElement[] = [];
+            let changed = false;
+            for (const el of prev) {
+                if (el.type === 'text') {
+                    if (isOverText(el as TextElement, x, y, size)) {
+                        changed = true;
+                    } else {
+                        newElements.push(el);
+                    }
+                } else if (el.type === 'stroke') {
+                    const segments = eraseFromStroke(el as StrokeElement, x, y, size);
+                    if (segments.length !== 1 || segments[0] !== el) {
+                        changed = true;
+                        newElements.push(...segments);
+                    } else {
+                        newElements.push(el);
+                    }
+                }
+            }
+            return changed ? newElements : prev;
+        });
+        return;
+    }
+
     const id = crypto.randomUUID();
     const newElement: StrokeElement = {
         id,
@@ -208,6 +282,33 @@ export const useWhiteboard = () => {
 
   const continueDrawing = useCallback((x: number, y: number, pressure?: number) => {
     if (!isDrawing.current) return;
+
+    if (tool === 'eraser') {
+        setElements(prev => {
+            const newElements: WhiteboardElement[] = [];
+            let changed = false;
+            for (const el of prev) {
+                if (el.type === 'text') {
+                    if (isOverText(el as TextElement, x, y, size)) {
+                        changed = true;
+                    } else {
+                        newElements.push(el);
+                    }
+                } else if (el.type === 'stroke') {
+                    const segments = eraseFromStroke(el as StrokeElement, x, y, size);
+                    if (segments.length !== 1 || segments[0] !== el) {
+                        changed = true;
+                        newElements.push(...segments);
+                    } else {
+                        newElements.push(el);
+                    }
+                }
+            }
+            return changed ? newElements : prev;
+        });
+        return;
+    }
+
     setElements((prev) => {
       const lastElement = prev[prev.length - 1];
       if (!lastElement || lastElement.type !== 'stroke' || lastElement.isComplete) return prev;
@@ -217,12 +318,17 @@ export const useWhiteboard = () => {
       
       return [...prev.slice(0, -1), newElement];
     });
-  }, []);
+  }, [tool, size]);
 
   const stopDrawing = useCallback(async () => {
     if (!isDrawing.current) return;
     isDrawing.current = false;
     
+    if (tool === 'eraser') {
+        addToHistory(elements);
+        return;
+    }
+
     // We need to get the latest state. Since stopDrawing depends on elements, it should be fresh.
     const lastElement = elements[elements.length - 1];
     if (!lastElement || lastElement.type !== 'stroke' || lastElement.isComplete) return;
