@@ -4,50 +4,40 @@ Welcome to **Whiteboat**. It's like a whiteboard, but... wetter? No, wait. It's 
 
 ![Whiteboat Demo](/.github/assets/image.png)
 
-## What is this?
+## What is Whiteboat?
 
-It's a canvas where you can draw things. It uses `perfect-freehand` so your shaky mouse drawings look like artistic masterpieces (or at least legible scribbles). It also has `tesseract.js`, which means it can probably read your handwriting better than your pharmacist can.
+Whiteboat is a whiteboard app that is designed to be simple, privacy focused, and not any big tech or tools that you have to search etc.
 
-## Features
+## How to use Whiteboat
 
-- **Draw Lines**: Obviously.
-- **OCR Magic**: I use Tesseract to try and understand what you wrote. Good luck to the AI.
-- **Konva Power**: I use Konva for the canvas stuff. It's like HTML5 Canvas but with a PhD.
-- **Tailwind CSS**: Because writing actual CSS is so 2015.
+The simplest way to use Whiteboat is to use the hosted version at ![whiteboat.vercel.app](https://whiteboat.vercel.app). Or set it up locally ⬇️
 
-## I don't like React
+### Setting up Whiteboat locally
 
-That's unfortunate, because this is a React app. It's like walking into a pizzeria and announcing you hate dough. I use hooks, I use components, and I probably re-render too much. But hey, at least it's not Angular 1.x, right? (Too soon?)
-
-If you really hate React, you can try rewriting this in Vanilla JS. See you in 10 years when you finish implementing your own state management system.
-
-## How to run this bad boy
-
-Since we established I'm not using Docker, here is the highly complex, multi-step process to get this running:
-
-1.  **Install dependencies** (The part where we download half the internet):
+1.  **Install dependencies**
     ```bash
     npm install
     ```
 
-2.  **Run the dev server** (The part where magic happens):
+2.  **Run the dev server**
     ```bash
     npm run dev
     ```
 
 3.  **Open your browser**:
-    Usually at `http://localhost:5173`. If it's not there, check your terminal. I'm not a mind reader.
+    Usually at `http://localhost:5173`. If it's not there, check your terminal. 
 
-## Tech Stack
+## stuff used
 
-- **Vite**: Because waiting for Webpack is painful.
-- **React**: Because I like components.
-- **TypeScript**: Because I like red squiggly lines.
-- **Shadcn UI**: Because I want it to look good without trying too hard.
+- Vite
+- React
+- TypeScript
+- Tailwind CSS
+- VSCode Copilot
 
 ## Contributing
 
-If you want to add features, fix bugs, or just rename everything to "WhiteyMcWhiteboardFace", feel free to open a PR. Just don't sink the boat.
+If you want to add features, fix bugs, or that kind of things, feel free to open a PR. Just don't sink the boat.
 
 ## License
 
@@ -61,4 +51,4 @@ For the legal mumbo-jumbo, see the [LICENSE.md](LICENSE.md) file.
 
 ---
 
-*Made with ❤️ by a developer who is 13 years old.*
+*Made with ❤️ by a developer (13 yo)*
