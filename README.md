@@ -10,7 +10,7 @@ Whiteboat is a whiteboard app that is designed to be simple, privacy focused, an
 
 ## How to use Whiteboat
 
-The simplest way to use Whiteboat is to use the hosted version at ![whiteboat.vercel.app](https://whiteboat.vercel.app). Or set it up locally ⬇️
+The simplest way to use Whiteboat is to use the hosted version at [whiteboat.vercel.app](https://whiteboat.vercel.app). Or set it up locally ⬇️
 
 ### Setting up Whiteboat locally
 
