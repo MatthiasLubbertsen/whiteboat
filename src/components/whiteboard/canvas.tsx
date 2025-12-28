@@ -265,6 +265,11 @@ export const Canvas: React.FC<CanvasProps> = ({
         onTouchMove={handleMouseMove}
         onTouchEnd={handleMouseUp}
         onWheel={handleWheel}
+        onDragMove={(e) => {
+          if (tool === 'hand') {
+            setPosition({ x: e.target.x(), y: e.target.y() });
+          }
+        }}
         scaleX={scale}
         scaleY={scale}
         x={position.x}
