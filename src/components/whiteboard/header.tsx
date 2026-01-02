@@ -9,6 +9,11 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Download, Moon, Sun, Monitor } from 'lucide-react';
 
 interface HeaderProps {
@@ -38,17 +43,31 @@ export const Header: React.FC<HeaderProps> = ({ onDownload, theme, setTheme }) =
       </div>
 
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon" onClick={cycleTheme} title={`Theme: ${theme}`}>
-          {getThemeIcon()}
-        </Button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="ghost" size="icon" onClick={cycleTheme}>
+              {getThemeIcon()}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Toggle theme</p>
+          </TooltipContent>
+        </Tooltip>
 
         <Dialog>
-          <DialogTrigger asChild>
-            <Button variant="outline" size="sm" className="gap-2">
-              <Download className="h-4 w-4" />
-              <span className="hidden sm:inline">Export</span>
-            </Button>
-          </DialogTrigger>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-2">
+                  <Download className="h-4 w-4" />
+                  <span className="hidden sm:inline">Export</span>
+                </Button>
+              </DialogTrigger>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Export whiteboard</p>
+            </TooltipContent>
+          </Tooltip>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
               <DialogTitle>Export Whiteboard</DialogTitle>
