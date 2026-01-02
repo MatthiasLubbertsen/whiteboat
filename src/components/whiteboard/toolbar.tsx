@@ -107,7 +107,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                 {isRecognizing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
                 </Button>
             </TooltipTrigger>
-            <TooltipContent>Magic Pencil (OCR)</TooltipContent>
+            <TooltipContent>OCR Pencil (Experimental)</TooltipContent>
         </Tooltip>
 
         <Tooltip>

@@ -15,7 +15,7 @@ The simplest way to use Whiteboat is to use the hosted version at [whiteboat.ver
 ### Setting up Whiteboat locally
 
 1.  **Install dependencies**
-    ```bash
+    ```bash     
     npm install
     ```
 

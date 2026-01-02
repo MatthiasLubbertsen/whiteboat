@@ -100,9 +100,9 @@ export const Canvas: React.FC<CanvasProps> = ({
       textarea.style.position = 'absolute';
       textarea.style.top = areaPosition.y + 'px';
       textarea.style.left = areaPosition.x + 'px';
-      textarea.style.width = Math.max(textNode.width() - textNode.padding() * 2, 100) + 'px';
-      textarea.style.height = Math.max(textNode.height() - textNode.padding() * 2 + 5, 50) + 'px';
-      textarea.style.fontSize = (textNode.fontSize() * scale) + 'px'; // Scale font size
+      textarea.style.width = Math.max(textNode.width() * textNode.scaleX() - textNode.padding() * 2, 100) + 'px';
+      textarea.style.height = Math.max(textNode.height() * textNode.scaleY() - textNode.padding() * 2 + 5, 50) + 'px';
+      textarea.style.fontSize = (textNode.fontSize() * textNode.scaleY() * scale) + 'px'; // Scale font size
       textarea.style.border = 'none';
       textarea.style.padding = '0px';
       textarea.style.margin = '0px';
@@ -115,8 +115,15 @@ export const Canvas: React.FC<CanvasProps> = ({
       textarea.style.transformOrigin = 'left top';
       textarea.style.textAlign = textNode.align();
       textarea.style.color = textNode.fill() as string;
+      textarea.style.whiteSpace = 'nowrap';
       
       textarea.focus();
+
+      // Auto-resize width
+      textarea.addEventListener('input', function() {
+          this.style.width = '0px';
+          this.style.width = this.scrollWidth + 'px';
+      });
 
       const removeTextarea = () => {
           updateElement(textEl.id, { text: textarea.value });
@@ -235,6 +242,8 @@ export const Canvas: React.FC<CanvasProps> = ({
           x: node.x(),
           y: node.y(),
           rotation: node.rotation(),
+          scaleX: node.scaleX(),
+          scaleY: node.scaleY(),
       });
   };
 
@@ -299,6 +308,8 @@ export const Canvas: React.FC<CanvasProps> = ({
                             x={el.x}
                             y={el.y}
                             rotation={el.rotation}
+                            scaleX={el.scaleX || 1}
+                            scaleY={el.scaleY || 1}
                             draggable={tool === 'select'}
                             onClick={(e) => {
                                 e.cancelBubble = true;
@@ -432,6 +443,8 @@ export const Canvas: React.FC<CanvasProps> = ({
                     x={el.x}
                     y={el.y}
                     rotation={el.rotation}
+                    scaleX={el.scaleX || 1}
+                    scaleY={el.scaleY || 1}
                     draggable={tool === 'select'}
                     onClick={(e) => {
                         e.cancelBubble = true;
@@ -567,6 +580,8 @@ export const Canvas: React.FC<CanvasProps> = ({
                         x={textEl.x}
                         y={textEl.y}
                         rotation={textEl.rotation}
+                        scaleX={textEl.scaleX || 1}
+                        scaleY={textEl.scaleY || 1}
                         text={textEl.text}
                         fontSize={textEl.fontSize}
                         fill={textEl.color}

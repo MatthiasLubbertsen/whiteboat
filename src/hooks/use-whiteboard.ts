@@ -12,6 +12,8 @@ export interface BaseElement {
   x: number;
   y: number;
   rotation: number;
+  scaleX?: number;
+  scaleY?: number;
   color: string;
 }
 
@@ -75,6 +77,20 @@ const strokesToPath = (strokes: StrokeElement[]) => {
     return { dataUrl: canvas.toDataURL(), x: minX, y: minY };
 };
 
+const getGlobalPoint = (p: Point, el: BaseElement) => {
+    const sx = el.scaleX ?? 1;
+    const sy = el.scaleY ?? 1;
+    const rad = el.rotation * Math.PI / 180;
+    
+    const px = p.x * sx;
+    const py = p.y * sy;
+    
+    const gx = el.x + (px * Math.cos(rad) - py * Math.sin(rad));
+    const gy = el.y + (px * Math.sin(rad) + py * Math.cos(rad));
+    
+    return { x: gx, y: gy };
+};
+
 const eraseFromStroke = (stroke: StrokeElement, x: number, y: number, radius: number): StrokeElement[] => {
     const points = stroke.points;
     let hasErasure = false;
@@ -82,7 +98,8 @@ const eraseFromStroke = (stroke: StrokeElement, x: number, y: number, radius: nu
     let currentSegment: Point[] = [];
 
     for (const p of points) {
-        const dist = Math.hypot(p.x - x, p.y - y);
+        const gp = getGlobalPoint(p, stroke);
+        const dist = Math.hypot(gp.x - x, gp.y - y);
         if (dist > radius) {
             currentSegment.push(p);
         } else {
@@ -111,6 +128,22 @@ const eraseFromStroke = (stroke: StrokeElement, x: number, y: number, radius: nu
 };
 
 const isOverText = (text: TextElement, x: number, y: number, radius: number) => {
+    const sx = text.scaleX ?? 1;
+    const sy = text.scaleY ?? 1;
+    const rad = text.rotation * Math.PI / 180;
+    
+    // Transform mouse to local space
+    const dx = x - text.x;
+    const dy = y - text.y;
+    
+    // Rotate backwards
+    const rx = dx * Math.cos(-rad) - dy * Math.sin(-rad);
+    const ry = dx * Math.sin(-rad) + dy * Math.cos(-rad); // Typo fix: Math.cos
+    
+    // Scale backwards
+    const lx = rx / sx;
+    const ly = ry / sy;
+
     const ctx = document.createElement('canvas').getContext('2d');
     if (!ctx) return false;
     ctx.font = `${text.fontSize}px sans-serif`;
@@ -118,8 +151,10 @@ const isOverText = (text: TextElement, x: number, y: number, radius: number) => 
     const width = metrics.width;
     const height = text.fontSize; 
     
-    return x >= text.x - radius && x <= text.x + width + radius &&
-           y >= text.y - radius && y <= text.y + height + radius;
+    const localRadius = radius / Math.max(sx, sy);
+
+    return lx >= -localRadius && lx <= width + localRadius &&
+           ly >= -localRadius && ly <= height + localRadius;
 };
 
 export const useWhiteboard = () => {
